@@ -1524,7 +1524,8 @@ function _applyDefaults(){
   if(!APP.managerPin) APP.managerPin=DEFAULT_PIN;
 }
 
-document.getElementById('navDate').textContent=
+const _navDateEl = document.getElementById('navDate');
+if(_navDateEl) _navDateEl.textContent =
   now.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
 
 setSyncStatus('connecting');
