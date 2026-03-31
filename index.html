@@ -40,7 +40,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--fh);min-height:100
 }
 .login-card{
   background:var(--surface);border:1px solid var(--border2);border-radius:20px;
-  padding:48px 40px;width:420px;max-width:92vw;text-align:center;
+  padding:48px 40px;width:440px;max-width:92vw;text-align:center;
   animation:fadeUp .4s ease;
 }
 @keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
@@ -54,9 +54,34 @@ body{background:var(--bg);color:var(--text);font-family:var(--fh);min-height:100
 .login-sub{font-size:13px;color:var(--text3);font-family:var(--fm);margin-bottom:32px;}
 .login-step{display:none;}
 .login-step.active{display:block;}
+/* Two big role buttons */
+.role-choose{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:8px;}
+.role-choose-btn{
+  background:var(--surface2);border:2px solid var(--border);border-radius:14px;
+  padding:24px 16px;cursor:pointer;transition:all .2s;font-family:var(--fh);color:var(--text);
+}
+.role-choose-btn:hover{border-color:var(--accent2);background:var(--surface3);}
+.role-choose-btn .rc-icon{font-size:32px;margin-bottom:10px;}
+.role-choose-btn .rc-label{font-size:15px;font-weight:700;}
+.role-choose-btn .rc-sub{font-size:11px;color:var(--text3);font-family:var(--fm);margin-top:4px;}
+.role-choose-btn.manager-btn{border-color:rgba(131,5,68,.3);}
+.role-choose-btn.manager-btn:hover{border-color:var(--accent2);background:rgba(131,5,68,.08);}
+/* PIN entry */
+.pin-row{display:flex;gap:8px;margin-top:10px;}
+.pin-input{
+  flex:1;background:var(--surface2);border:1px solid var(--border2);border-radius:9px;
+  padding:12px 14px;font-size:16px;font-family:var(--fm);color:var(--text);
+  outline:none;text-align:center;letter-spacing:.3em;
+}
+.pin-input:focus{border-color:var(--accent2);}
+.login-back{
+  background:none;border:none;color:var(--text3);font-size:12px;font-family:var(--fm);
+  cursor:pointer;margin-top:16px;text-decoration:underline;display:block;width:100%;
+}
+.login-back:hover{color:var(--text2);}
 .person-btn{
   width:100%;text-align:left;background:var(--surface2);border:1px solid var(--border);
-  border-radius:10px;padding:13px 16px;margin-bottom:8px;cursor:pointer;
+  border-radius:10px;padding:12px 16px;margin-bottom:8px;cursor:pointer;
   display:flex;align-items:center;gap:12px;transition:all .15s;font-family:var(--fh);
   color:var(--text);font-size:14px;
 }
@@ -64,18 +89,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--fh);min-height:100
 .person-btn .av{
   width:34px;height:34px;border-radius:50%;display:flex;align-items:center;
   justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0;
-}
-.manager-section{margin-top:16px;padding-top:16px;border-top:1px solid var(--border);}
-.manager-pin-row{display:flex;gap:8px;margin-top:10px;}
-.pin-input{
-  flex:1;background:var(--surface2);border:1px solid var(--border2);border-radius:9px;
-  padding:11px 14px;font-size:15px;font-family:var(--fm);color:var(--text);
-  outline:none;text-align:center;letter-spacing:.3em;
-}
-.pin-input:focus{border-color:var(--accent2);}
-.login-back{
-  background:none;border:none;color:var(--text3);font-size:12px;font-family:var(--fm);
-  cursor:pointer;margin-top:16px;text-decoration:underline;
 }
 
 /* ── NAV ── */
@@ -333,22 +346,55 @@ textarea{resize:vertical;min-height:70px;}
   <div class="login-card">
     <div class="login-logo-mark">H</div>
     <div class="login-title">LEAVE<span style="color:var(--accent2)">.</span>DESK</div>
-    <div class="login-sub">Who are you today?</div>
+    <div class="login-sub" id="loginSub">How are you signing in today?</div>
 
-    <!-- Step 1: pick person -->
+    <!-- Step 1: choose role -->
     <div class="login-step active" id="loginStep1">
-      <div id="loginPeopleList" style="max-height:320px;overflow-y:auto;text-align:left;"></div>
-      <div class="manager-section">
-        <div style="font-size:11px;color:var(--text3);font-family:var(--fm);text-align:center">— or sign in as a manager —</div>
-        <div class="manager-pin-row">
-          <input class="pin-input" type="password" id="managerPin" placeholder="••••" maxlength="6" onkeydown="if(event.key==='Enter')tryManagerLogin()">
-          <button class="btn btn-p" onclick="tryManagerLogin()">Enter</button>
-        </div>
-        <div id="pinError" style="color:var(--red);font-size:11px;font-family:var(--fm);margin-top:8px;display:none">Incorrect PIN</div>
+      <div class="role-choose">
+        <button class="role-choose-btn manager-btn" onclick="chooseRole('manager')">
+          <div class="rc-icon">🔐</div>
+          <div class="rc-label">Manager</div>
+          <div class="rc-sub">Full access</div>
+        </button>
+        <button class="role-choose-btn" onclick="chooseRole('consultant')">
+          <div class="rc-icon">🙋</div>
+          <div class="rc-label">Consultant</div>
+          <div class="rc-sub">My leave</div>
+        </button>
       </div>
-      <div style="margin-top:20px;font-size:11px;color:var(--text3);font-family:var(--fm)">
+      <div style="margin-top:16px;font-size:11px;color:var(--text3);font-family:var(--fm)">
         First time? <span style="color:var(--accent2);cursor:pointer;text-decoration:underline" onclick="tryManagerLogin('setup')">Set up as manager</span>
       </div>
+    </div>
+
+    <!-- Step 2a: Manager PIN -->
+    <div class="login-step" id="loginStep2Manager">
+      <div style="font-size:13px;color:var(--text2);margin-bottom:16px">Enter your manager PIN</div>
+      <div class="pin-row">
+        <input class="pin-input" type="password" id="managerPin" placeholder="••••" maxlength="6" onkeydown="if(event.key==='Enter')tryManagerLogin()">
+        <button class="btn btn-p" onclick="tryManagerLogin()">Enter</button>
+      </div>
+      <div id="pinError" style="color:var(--red);font-size:11px;font-family:var(--fm);margin-top:10px;display:none">❌ Incorrect PIN — try again</div>
+      <button class="login-back" onclick="backToStep1()">← Back</button>
+    </div>
+
+    <!-- Step 2b: Consultant — pick name -->
+    <div class="login-step" id="loginStep2Consultant">
+      <div style="font-size:13px;color:var(--text2);margin-bottom:14px">Select your name</div>
+      <div style="margin-bottom:12px">
+        <select id="consultantSelect" style="width:100%;padding:11px 14px;font-size:14px;border-radius:9px" onchange="onConsultantSelected()">
+          <option value="">— choose your name —</option>
+        </select>
+      </div>
+      <div id="consultantPinSection" style="display:none">
+        <div style="font-size:13px;color:var(--text2);margin-bottom:10px">Enter your PIN</div>
+        <div class="pin-row">
+          <input class="pin-input" type="password" id="consultantPin" placeholder="••••" maxlength="6" onkeydown="if(event.key==='Enter')tryConsultantLogin()">
+          <button class="btn btn-p" onclick="tryConsultantLogin()">Enter</button>
+        </div>
+        <div id="consultantPinError" style="color:var(--red);font-size:11px;font-family:var(--fm);margin-top:10px;display:none">❌ Incorrect PIN — try again</div>
+      </div>
+      <button class="login-back" onclick="backToStep1()">← Back</button>
     </div>
   </div>
 </div>
@@ -509,7 +555,7 @@ textarea{resize:vertical;min-height:70px;}
       <div class="section-sub">Assign manager or consultant roles to each team member</div>
     </div>
   </div>
-  <div class="info-box warn">⚠️ Manager PIN: <b id="currentPinDisplay"></b> — keep this confidential. Change it below.</div>
+  <div class="info-box warn">⚠️ Manager PIN: <b id="currentPinDisplay"></b> — keep this confidential. Consultant PINs are set per person below or when adding a team member.</div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:28px">
     <div class="card">
       <div class="card-title">Change Manager PIN</div>
@@ -608,6 +654,7 @@ textarea{resize:vertical;min-height:70px;}
       <div class="field"><div class="field-lbl">Hours per Working Day</div><input type="number" id="personHPD" value="7.5" step="0.5" min="1" max="24"></div>
       <div class="field"><div class="field-lbl">Carried Over (days)</div><input type="number" id="personCarry" value="0" step="0.5" min="0"></div>
       <div class="field"><div class="field-lbl">Start Date</div><input type="date" id="personStart"></div>
+      <div class="field"><div class="field-lbl">Personal PIN (4 digits)</div><input type="number" id="personPin" placeholder="e.g. 5678" maxlength="6" style="letter-spacing:.2em"></div>
     </div>
     <input type="hidden" id="personEditId">
     <div class="modal-btns">
@@ -642,7 +689,6 @@ textarea{resize:vertical;min-height:70px;}
 const FIREBASE_CONFIG = {
   apiKey:            "AIzaSyCRtiSkOHMTMUmJZKUIIseFHC0wFLdaSqw",
   authDomain:        "holiday-tracker-76591.firebaseapp.com",
-  databaseURL:       "https://holiday-tracker-76591-default-rtdb.europe-west1.firebasedatabase.app",
   projectId:         "holiday-tracker-76591",
   storageBucket:     "holiday-tracker-76591.firebasestorage.app",
   messagingSenderId: "700559130669",
@@ -707,42 +753,75 @@ function saveApp(){
 // ═══════════════════════════════════════════════════════════════════
 const DEFAULT_PIN = '1234';
 
-function buildLoginList(){
-  const list = document.getElementById('loginPeopleList');
-  if(!APP.people.length){
-    list.innerHTML=`<div style="text-align:center;padding:20px;color:var(--text3);font-size:13px">No team members set up yet.<br>Sign in as manager to get started.</div>`;
-    return;
-  }
-  list.innerHTML = APP.people.map(p=>`
-    <button class="person-btn" onclick="loginAsPerson('${p.id}')">
-      <div class="av" style="background:${personColor(p.id)}">${initials(p.name)}</div>
-      <div style="flex:1">
-        <div style="font-weight:600">${p.name}</div>
-        <div style="font-size:11px;color:var(--text3);font-family:var(--fm)">${p.team||p.role||'Consultant'}</div>
-      </div>
-      <div style="font-size:11px;font-family:var(--fm);color:var(--text3)">${(APP.roles[p.id]||'consultant')==='manager'?'<span style="color:var(--accent2)">Manager</span>':'Consultant'}</div>
-    </button>`).join('');
+function showLoginStep(id){
+  document.querySelectorAll('.login-step').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
 }
 
-function loginAsPerson(id){
-  const p = APP.people.find(x=>x.id===id);
+function chooseRole(role){
+  if(role==='manager'){
+    document.getElementById('managerPin').value='';
+    document.getElementById('pinError').style.display='none';
+    showLoginStep('loginStep2Manager');
+    setTimeout(()=>document.getElementById('managerPin').focus(),100);
+  } else {
+    // Populate consultant dropdown
+    const sel=document.getElementById('consultantSelect');
+    sel.innerHTML='<option value="">— choose your name —</option>'+
+      APP.people.map(p=>`<option value="${p.id}">${p.name}${p.team?' · '+p.team:''}</option>`).join('');
+    document.getElementById('consultantPinSection').style.display='none';
+    document.getElementById('consultantPin').value='';
+    document.getElementById('consultantPinError').style.display='none';
+    showLoginStep('loginStep2Consultant');
+  }
+}
+
+function backToStep1(){
+  showLoginStep('loginStep1');
+  document.getElementById('managerPin').value='';
+  document.getElementById('pinError').style.display='none';
+}
+
+function onConsultantSelected(){
+  const id=document.getElementById('consultantSelect').value;
+  const sec=document.getElementById('consultantPinSection');
+  document.getElementById('consultantPin').value='';
+  document.getElementById('consultantPinError').style.display='none';
+  if(id){
+    sec.style.display='block';
+    setTimeout(()=>document.getElementById('consultantPin').focus(),100);
+  } else {
+    sec.style.display='none';
+  }
+}
+
+function tryConsultantLogin(){
+  const id=document.getElementById('consultantSelect').value;
+  if(!id){ showToast('Select your name','err'); return; }
+  const entered=document.getElementById('consultantPin').value.trim();
+  const p=APP.people.find(x=>x.id===id);
   if(!p) return;
-  const role = APP.roles[id]||'consultant';
-  SESSION.personId=id;
-  SESSION.isManager=(role==='manager');
-  startApp();
+  const correct=String((APP.pins&&APP.pins[id])||'0000');
+  if(entered===correct){
+    document.getElementById('consultantPinError').style.display='none';
+    SESSION.personId=id;
+    SESSION.isManager=(APP.roles[id]||'consultant')==='manager';
+    startApp();
+  } else {
+    document.getElementById('consultantPinError').style.display='block';
+    document.getElementById('consultantPin').value='';
+  }
 }
 
 function tryManagerLogin(mode){
   if(mode==='setup'){
-    // First time: no people exist, allow with default PIN
     SESSION.personId='__manager__';
     SESSION.isManager=true;
     startApp();
     return;
   }
-  const pin = document.getElementById('managerPin').value.trim();
-  const correct = APP.managerPin||DEFAULT_PIN;
+  const pin=document.getElementById('managerPin').value.trim();
+  const correct=APP.managerPin||DEFAULT_PIN;
   if(pin===correct){
     SESSION.personId='__manager__';
     SESSION.isManager=true;
@@ -752,6 +831,20 @@ function tryManagerLogin(mode){
     document.getElementById('pinError').style.display='block';
     document.getElementById('managerPin').value='';
   }
+}
+
+function buildLoginList(){
+  // No longer needed — login uses role buttons + dropdown
+  // kept as no-op so Firebase re-render calls don't error
+}
+
+function loginAsPerson(id){
+  // Legacy direct login — now routes through PIN check
+  const p=APP.people.find(x=>x.id===id);
+  if(!p) return;
+  SESSION.personId=id;
+  SESSION.isManager=(APP.roles[id]||'consultant')==='manager';
+  startApp();
 }
 
 function startApp(){
@@ -768,8 +861,8 @@ function logout(){
   document.getElementById('mainNav').style.display='none';
   document.getElementById('loginScreen').style.display='flex';
   document.getElementById('managerPin').value='';
-  buildLoginList();
-  // hide all pages
+  document.getElementById('pinError').style.display='none';
+  showLoginStep('loginStep1');
   document.querySelectorAll('.page').forEach(p=>p.style.display='none');
   document.getElementById('page-calendar').style.display='block';
   document.getElementById('page-calendar').classList.add('active');
@@ -1210,12 +1303,19 @@ function renderRoles(){
   }
   document.getElementById('rolesGrid').innerHTML=APP.people.map(p=>{
     const role=APP.roles[p.id]||'consultant';
-    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)">
+    const pin=(APP.pins&&APP.pins[p.id])||'—';
+    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border);gap:12px;flex-wrap:wrap">
       <div style="display:flex;align-items:center;gap:12px">
         <div style="width:36px;height:36px;border-radius:50%;background:${personColor(p.id)};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff">${initials(p.name)}</div>
         <div><div style="font-weight:600">${p.name}</div><div style="font-size:11px;color:var(--text3);font-family:var(--fm)">${p.team||''}</div></div>
       </div>
-      <div style="display:flex;align-items:center;gap:10px">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:11px;color:var(--text3);font-family:var(--fm)">PIN:</span>
+          <input type="number" value="${APP.pins&&APP.pins[p.id]?APP.pins[p.id]:''}" placeholder="set pin" maxlength="6"
+            style="width:90px;padding:6px 10px;font-size:13px;letter-spacing:.15em;border-radius:7px;text-align:center"
+            onchange="setPersonPin('${p.id}',this.value)">
+        </div>
         <span class="role-badge ${role==='manager'?'role-manager':'role-consultant'}">${role}</span>
         <select onchange="setRole('${p.id}',this.value)" style="width:140px;padding:7px 10px;font-size:12px">
           <option value="consultant"${role==='consultant'?' selected':''}>Consultant</option>
@@ -1231,6 +1331,14 @@ function setRole(personId,role){
   saveApp();
   renderRoles();
   showToast(`Role updated to ${role}`);
+}
+function setPersonPin(personId,pin){
+  const p=pin.trim();
+  if(!p||p.length<4){ showToast('PIN must be at least 4 digits','err'); return; }
+  if(!APP.pins) APP.pins={};
+  APP.pins[personId]=p;
+  saveApp();
+  showToast('PIN updated');
 }
 function changePin(){
   const p1=document.getElementById('newPin').value.trim();
@@ -1420,6 +1528,7 @@ function openAddPersonModal(){
   document.getElementById('personAllowDays').value='25';
   document.getElementById('personHPD').value='7.5';
   document.getElementById('personCarry').value='0';
+  document.getElementById('personPin').value='';
   document.getElementById('personModal').classList.add('open');
 }
 function openEditPersonModal(id){
@@ -1435,11 +1544,13 @@ function openEditPersonModal(id){
   document.getElementById('personHPD').value=p.hoursPerDay||7.5;
   document.getElementById('personCarry').value=p.carriedDays||0;
   document.getElementById('personStart').value=p.startDate||'';
+  document.getElementById('personPin').value=(APP.pins&&APP.pins[id])||'';
   document.getElementById('personModal').classList.add('open');
 }
 function savePerson(){
   const name=document.getElementById('personName').value.trim();
   if(!name){ showToast('Enter a name','err'); return; }
+  const pin=document.getElementById('personPin').value.trim();
   const data={
     name,team:document.getElementById('personTeam').value.trim(),
     role:document.getElementById('personRole').value.trim(),
@@ -1452,9 +1563,12 @@ function savePerson(){
   if(editId){
     const idx=APP.people.findIndex(p=>p.id===editId);
     if(idx>-1) APP.people[idx]={...APP.people[idx],...data};
+    if(pin&&pin.length>=4){ if(!APP.pins)APP.pins={}; APP.pins[editId]=pin; }
     showToast(name+' updated');
   } else {
-    APP.people.push({id:uid(),...data});
+    const newId=uid();
+    APP.people.push({id:newId,...data});
+    if(pin&&pin.length>=4){ if(!APP.pins)APP.pins={}; APP.pins[newId]=pin; }
     showToast(name+' added');
   }
   saveApp(); closeModal('personModal'); renderTeam(); renderCalendar(); buildLoginList();
@@ -1467,6 +1581,7 @@ function deletePersonFromModal(){
   APP.absences=APP.absences.filter(a=>a.personId!==id);
   APP.requests=APP.requests.filter(r=>r.personId!==id);
   if(APP.roles) delete APP.roles[id];
+  if(APP.pins)  delete APP.pins[id];
   saveApp(); closeModal('personModal'); renderTeam(); renderCalendar(); buildLoginList();
   showToast(p.name+' removed');
 }
@@ -1521,11 +1636,11 @@ function _applyDefaults(){
   if(!APP.absences) APP.absences=[];
   if(!APP.requests) APP.requests=[];
   if(!APP.roles)    APP.roles={};
+  if(!APP.pins)     APP.pins={};
   if(!APP.managerPin) APP.managerPin=DEFAULT_PIN;
 }
 
-const _navDateEl = document.getElementById('navDate');
-if(_navDateEl) _navDateEl.textContent =
+document.getElementById('navDate').textContent=
   now.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
 
 setSyncStatus('connecting');
@@ -1534,7 +1649,6 @@ _dbRef.once('value').then(snap=>{
   if(data) APP=data;
   _applyDefaults();
   setSyncStatus('live');
-  buildLoginList();
 
   _dbRef.on('value',snap=>{
     if(_ignoreNext){_ignoreNext=false;return;}
@@ -1543,9 +1657,7 @@ _dbRef.once('value').then(snap=>{
     APP=remote;
     _applyDefaults();
     setSyncStatus('live');
-    buildLoginList();
     updatePendingBadge();
-    // Re-render active page if app is running
     if(SESSION.personId){
       const pg=document.querySelector('.page.active');
       if(pg){ showPage(pg.id.replace('page-','')); }
@@ -1555,7 +1667,6 @@ _dbRef.once('value').then(snap=>{
   console.error('Firebase failed:',e);
   setSyncStatus('error');
   _applyDefaults();
-  buildLoginList();
 });
 </script>
 </body>
