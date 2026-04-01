@@ -571,6 +571,17 @@ textarea{resize:vertical;min-height:70px;}
       </div>
     </div>
   </div>
+  <div class="card" style="margin-bottom:24px">
+    <div class="card-title">Email Settings</div>
+    <div style="font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:16px">Set your name and email so decision emails are signed correctly and consultants can reply directly to you.</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+      <div class="field"><div class="field-lbl">Your Name (for email signature)</div><input type="text" id="settingsManagerName" placeholder="e.g. James Smith — Team Manager" oninput="saveEmailSettings()"></div>
+      <div class="field"><div class="field-lbl">Your Email (reply-to address)</div><input type="email" id="settingsManagerEmail" placeholder="e.g. james.smith@company.com" oninput="saveEmailSettings()"></div>
+    </div>
+    <div style="font-size:11px;color:var(--text3);font-family:var(--fm);padding:8px 12px;background:var(--surface2);border-radius:8px;border-left:2px solid var(--accent2)">
+      💡 Each team member also needs an email address in their profile — edit them below to add it.
+    </div>
+  </div>
   <div class="card">
     <div class="card-title" style="margin-bottom:16px">Team Member Roles</div>
     <div id="rolesGrid"></div>
@@ -648,6 +659,7 @@ textarea{resize:vertical;min-height:70px;}
     <div class="modal-title" id="personModalTitle">Add Team Member</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
       <div class="field" style="grid-column:1/-1"><div class="field-lbl">Full Name</div><input type="text" id="personName" placeholder="e.g. Sarah Johnson"></div>
+      <div class="field" style="grid-column:1/-1"><div class="field-lbl">Email Address</div><input type="email" id="personEmail" placeholder="e.g. sarah.johnson@company.com"></div>
       <div class="field"><div class="field-lbl">Team / Department</div><input type="text" id="personTeam" placeholder="e.g. Sales"></div>
       <div class="field"><div class="field-lbl">Job Title</div><input type="text" id="personRole" placeholder="e.g. Account Manager"></div>
       <div class="field"><div class="field-lbl">Annual Allowance (days)</div><input type="number" id="personAllowDays" value="25" step="0.5" min="0"></div>
@@ -682,6 +694,27 @@ textarea{resize:vertical;min-height:70px;}
 
 <div class="toast" id="toast"></div>
 
+<!-- EMAIL PREVIEW MODAL -->
+<div class="modal-overlay" id="emailModal">
+  <div class="modal" style="width:540px;max-width:96vw">
+    <div class="modal-title" id="emailModalTitle">📧 Send Decision Email</div>
+    <div style="font-size:12px;color:var(--text3);font-family:var(--fm);margin-bottom:16px">Review the pre-filled email below, edit if needed, then click <b>Open in Outlook</b>.</div>
+    <div style="display:grid;gap:10px;margin-bottom:14px">
+      <div class="field"><div class="field-lbl">To</div><input type="email" id="emailTo" placeholder="recipient@company.com"></div>
+      <div class="field"><div class="field-lbl">Subject</div><input type="text" id="emailSubject"></div>
+      <div class="field"><div class="field-lbl">Message</div><textarea id="emailBody" style="min-height:220px;font-size:13px;line-height:1.7"></textarea></div>
+    </div>
+    <div style="padding:10px 12px;background:var(--surface2);border-radius:8px;font-size:11px;color:var(--text3);font-family:var(--fm);margin-bottom:16px">
+      💡 Clicking <b>Open in Outlook</b> opens your Outlook desktop app with this email pre-filled. Review it there and hit Send.
+      <br>If the email address is missing, go to <b>Roles & Settings → Team Member Roles</b> and edit the person to add their email.
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-s" onclick="closeModal('emailModal')">Skip — don't send</button>
+      <button class="btn btn-p" onclick="sendDecisionEmail()">📧 Open in Outlook</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ═══════════════════════════════════════════════════════════════════
 // FIREBASE CONFIG — paste your config here
@@ -689,7 +722,6 @@ textarea{resize:vertical;min-height:70px;}
 const FIREBASE_CONFIG = {
   apiKey:            "AIzaSyCRtiSkOHMTMUmJZKUIIseFHC0wFLdaSqw",
   authDomain:        "holiday-tracker-76591.firebaseapp.com",
-  databaseURL:       "https://holiday-tracker-76591-default-rtdb.europe-west1.firebasedatabase.app",
   projectId:         "holiday-tracker-76591",
   storageBucket:     "holiday-tracker-76591.firebasestorage.app",
   messagingSenderId: "700559130669",
@@ -1296,8 +1328,109 @@ function renderSummaryCharts(hol,sick,comp,nond,monthly){
 // ═══════════════════════════════════════════════════════════════════
 // ROLES PAGE
 // ═══════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════
+// EMAIL SETTINGS
+// ═══════════════════════════════════════════════════════════════════
+function saveEmailSettings(){
+  if(!APP.emailSettings) APP.emailSettings={};
+  APP.emailSettings.managerName  = document.getElementById('settingsManagerName').value.trim();
+  APP.emailSettings.managerEmail = document.getElementById('settingsManagerEmail').value.trim();
+  saveApp();
+}
+function loadEmailSettings(){
+  const s = APP.emailSettings||{};
+  const n = document.getElementById('settingsManagerName');
+  const e = document.getElementById('settingsManagerEmail');
+  if(n) n.value = s.managerName||'';
+  if(e) e.value = s.managerEmail||'';
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// EMAIL MODAL
+// ═══════════════════════════════════════════════════════════════════
+function openEmailModal(req, decision, managerNote){
+  const p       = APP.people.find(x=>x.id===req.personId);
+  const name    = p ? p.name : 'Team Member';
+  const email   = p ? (p.email||'') : '';
+  const s       = APP.emailSettings||{};
+  const mgrName = s.managerName  || 'Your Manager';
+  const mgrEmail= s.managerEmail || '';
+
+  const tL = {H:'Holiday',C:'Compassionate Leave',N:'Non-Deductible Leave'};
+  const leaveType = tL[req.type]||req.type;
+  const days  = countWD(req.startDate, req.endDate);
+  const hours = (days * req.hoursPerDay).toFixed(1);
+  const dateRange = req.startDate===req.endDate
+    ? fmtDate(req.startDate)
+    : `${fmtDate(req.startDate)} to ${fmtDate(req.endDate)}`;
+
+  let subject, body;
+
+  if(decision==='approved'){
+    subject = `Your Leave Request — Approved ✓`;
+    body =
+`Hi ${name.split(' ')[0]},
+
+I'm pleased to confirm that your ${leaveType} request has been approved.
+
+Details:
+  Dates:     ${dateRange}
+  Duration:  ${days} working day${days!==1?'s':''} (${hours} hours)
+  Type:      ${leaveType}
+${managerNote ? `\nNote from manager:\n  ${managerNote}\n` : ''}
+Please make sure your absence is covered and update your calendar accordingly. If you have any questions, don't hesitate to get in touch.
+
+Kind regards,
+${mgrName}`;
+  } else {
+    subject = `Your Leave Request — Unable to Approve`;
+    body =
+`Hi ${name.split(' ')[0]},
+
+Thank you for submitting your ${leaveType} request. Unfortunately, I'm unable to approve it at this time.
+
+Request details:
+  Dates:     ${dateRange}
+  Duration:  ${days} working day${days!==1?'s':''} (${hours} hours)
+  Type:      ${leaveType}
+${managerNote ? `\nReason:\n  ${managerNote}\n` : ''}
+I'd be happy to discuss alternative dates or arrangements — please feel free to speak with me or reply to this email.
+
+Kind regards,
+${mgrName}`;
+  }
+
+  document.getElementById('emailModalTitle').textContent =
+    decision==='approved' ? '📧 Send Approval Email' : '📧 Send Decline Email';
+  document.getElementById('emailTo').value      = email;
+  document.getElementById('emailSubject').value = subject;
+  document.getElementById('emailBody').value    = body;
+
+  // Store reply-to for when send is clicked
+  document.getElementById('emailModal').dataset.replyTo = mgrEmail;
+
+  document.getElementById('emailModal').classList.add('open');
+}
+
+function sendDecisionEmail(){
+  const to      = encodeURIComponent(document.getElementById('emailTo').value.trim());
+  const subject = encodeURIComponent(document.getElementById('emailSubject').value.trim());
+  const body    = encodeURIComponent(document.getElementById('emailBody').value.trim());
+  const replyTo = document.getElementById('emailModal').dataset.replyTo||'';
+
+  if(!to){ showToast('No email address — add one to the consultant\'s profile','err'); return; }
+
+  // mailto opens Outlook (or default mail client) with fields pre-filled
+  let mailto = `mailto:${to}?subject=${subject}&body=${body}`;
+  if(replyTo) mailto += `&reply-to=${encodeURIComponent(replyTo)}`;
+  window.location.href = mailto;
+
+  closeModal('emailModal');
+}
+
 function renderRoles(){
   document.getElementById('currentPinDisplay').textContent=(APP.managerPin||'1234');
+  loadEmailSettings();
   if(!APP.people.length){
     document.getElementById('rolesGrid').innerHTML='<div style="color:var(--text3);font-size:13px">No team members yet.</div>';
     return;
@@ -1506,7 +1639,6 @@ function makeDecision(decision){
   if(idx<0) return;
   const r=APP.requests[idx];
   APP.requests[idx]={...r,status:decision,managerNote:note,decidedAt:Date.now()};
-  // If approved, create actual absence record
   if(decision==='approved'){
     APP.absences.push({id:uid(),personId:r.personId,type:r.type,startDate:r.startDate,endDate:r.endDate,hoursPerDay:r.hoursPerDay,note:r.note,approvedFrom:id});
   }
@@ -1516,6 +1648,8 @@ function makeDecision(decision){
   renderCalendar();
   if(document.getElementById('page-requests').classList.contains('active')) renderRequests();
   showToast(decision==='approved'?'✓ Request approved':'✕ Request declined');
+  // Open email preview
+  openEmailModal(APP.requests[idx], decision, note);
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -1525,7 +1659,7 @@ function openAddPersonModal(){
   document.getElementById('personModalTitle').textContent='Add Team Member';
   document.getElementById('personEditId').value='';
   document.getElementById('personDeleteBtn').style.display='none';
-  ['personName','personTeam','personRole','personStart'].forEach(id=>document.getElementById(id).value='');
+  ['personName','personTeam','personRole','personStart','personEmail'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('personAllowDays').value='25';
   document.getElementById('personHPD').value='7.5';
   document.getElementById('personCarry').value='0';
@@ -1546,6 +1680,7 @@ function openEditPersonModal(id){
   document.getElementById('personCarry').value=p.carriedDays||0;
   document.getElementById('personStart').value=p.startDate||'';
   document.getElementById('personPin').value=(APP.pins&&APP.pins[id])||'';
+  document.getElementById('personEmail').value=p.email||'';
   document.getElementById('personModal').classList.add('open');
 }
 function savePerson(){
@@ -1555,6 +1690,7 @@ function savePerson(){
   const data={
     name,team:document.getElementById('personTeam').value.trim(),
     role:document.getElementById('personRole').value.trim(),
+    email:document.getElementById('personEmail').value.trim(),
     allowanceDays:parseFloat(document.getElementById('personAllowDays').value)||25,
     hoursPerDay:parseFloat(document.getElementById('personHPD').value)||7.5,
     carriedDays:parseFloat(document.getElementById('personCarry').value)||0,
@@ -1641,7 +1777,7 @@ function _applyDefaults(){
   if(!APP.managerPin) APP.managerPin=DEFAULT_PIN;
 }
 
-const _nd = document.getElementById('navDate'); if(_nd) _nd.textContent =
+document.getElementById('navDate').textContent=
   now.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
 
 setSyncStatus('connecting');
