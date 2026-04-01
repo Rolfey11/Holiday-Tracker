@@ -722,6 +722,7 @@ textarea{resize:vertical;min-height:70px;}
 const FIREBASE_CONFIG = {
   apiKey:            "AIzaSyCRtiSkOHMTMUmJZKUIIseFHC0wFLdaSqw",
   authDomain:        "holiday-tracker-76591.firebaseapp.com",
+  databaseURL:       "https://holiday-tracker-76591-default-rtdb.europe-west1.firebasedatabase.app",
   projectId:         "holiday-tracker-76591",
   storageBucket:     "holiday-tracker-76591.firebasestorage.app",
   messagingSenderId: "700559130669",
@@ -1777,7 +1778,8 @@ function _applyDefaults(){
   if(!APP.managerPin) APP.managerPin=DEFAULT_PIN;
 }
 
-document.getElementById('navDate').textContent=
+const _navDate = document.getElementById('navDate');
+if(_navDate) _navDate.textContent =
   now.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
 
 setSyncStatus('connecting');
